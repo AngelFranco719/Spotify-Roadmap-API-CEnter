@@ -1,4 +1,4 @@
-﻿namespace SpotifyRequestManagement.Models
+﻿namespace SpotifyRequestManagement.Models.Entities
 {
     public class Artist : SpotifyBaseObject
     {

@@ -1,7 +1,8 @@
 ﻿using System.Text.Json;
+using SpotifyRequestManagement.Models;
 using static System.Net.WebRequestMethods;
 
-namespace SpotifyRequestManagement.Models
+namespace SpotifyRequestManagement.Services
 {
     public class SpotifyAuthService
     {
@@ -21,37 +22,40 @@ namespace SpotifyRequestManagement.Models
         };
 
         private readonly HttpClient client;
-        private AuthToken authToken; 
+        private AuthToken authToken;
 
-        public SpotifyAuthService(HttpClient _client, AuthToken _authToken) {
-        
+        public SpotifyAuthService(HttpClient _client, AuthToken _authToken)
+        {
+
             client = _client;
-            authToken = _authToken; 
+            authToken = _authToken;
 
         }
 
         public async Task<string> getRequest()
         {
             var body = await content.ReadAsStringAsync();
-            return URL + '?' + body; 
+            return URL + '?' + body;
         }
 
-        private string getDeserializedJson(string jsonResponse) { 
+        private string getDeserializedJson(string jsonResponse)
+        {
 
             var spotifyToken = JsonSerializer.Deserialize<SpotifyTokenResponse>(jsonResponse);
-            authToken.token =  spotifyToken.access_token;
-            return authToken.token; 
+            authToken.token = spotifyToken.access_token;
+            return authToken.token;
 
         }
 
-        public async Task<string> getResponse() {
+        public async Task<string> getResponse()
+        {
             var response = await client.SendAsync(request);
 
             response.EnsureSuccessStatusCode();
 
-            string jsonContent = await response.Content.ReadAsStringAsync(); 
+            string jsonContent = await response.Content.ReadAsStringAsync();
 
-            return getDeserializedJson(jsonContent); 
+            return getDeserializedJson(jsonContent);
         }
 
     }

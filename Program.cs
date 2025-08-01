@@ -1,4 +1,5 @@
 using SpotifyRequestManagement.Models;
+using SpotifyRequestManagement.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

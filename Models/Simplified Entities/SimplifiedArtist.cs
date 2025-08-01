@@ -2,8 +2,8 @@
 
 namespace SpotifyRequestManagement.Models
 {
-    public class RelatedArtists
+    public class SimplifiedArtist : SpotifyBaseObject
     {
-        List<Artist> artists { get; set; }
+
     }
 }

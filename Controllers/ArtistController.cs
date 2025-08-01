@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SpotifyRequestManagement.Models;
+using SpotifyRequestManagement.Models.Entities;
+using SpotifyRequestManagement.Services;
 
 namespace SpotifyRequestManagement.Controllers
 {

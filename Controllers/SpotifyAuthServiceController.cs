@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SpotifyRequestManagement.Models;
+using SpotifyRequestManagement.Services;
 
 namespace SpotifyRequestManagement.Controllers
 {
