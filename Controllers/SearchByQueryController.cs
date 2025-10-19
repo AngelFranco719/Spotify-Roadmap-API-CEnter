@@ -32,7 +32,7 @@ namespace SpotifyRequestManagement.Controllers
             switch (type) {
 
                 case "track":
-                    var resultTrack = await queryResponse.getQueryResponse<Track,Tracks>();
+                    var resultTrack = await queryResponse.getQueryResponse<SimplifiedTrack,Tracks>();
                     var tracks = resultTrack.GetResult();
                     return Ok(tracks);
 

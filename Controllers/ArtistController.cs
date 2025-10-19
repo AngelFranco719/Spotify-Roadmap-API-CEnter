@@ -27,16 +27,6 @@ namespace SpotifyRequestManagement.Controllers
             
         }
 
-        [HttpGet("related")]
-        // GET: Related Artist
-        public async Task<IActionResult> getRelatedArtist(string id_token) {
-
-            var artists = await requestController.getRelatedArtist(id_token);
-
-            return (Ok(artists)); 
-
-        }
-
 
     }
 }

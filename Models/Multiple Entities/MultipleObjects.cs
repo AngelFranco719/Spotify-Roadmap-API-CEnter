@@ -4,7 +4,6 @@ namespace SpotifyRequestManagement.Models.Multiple_Entities
 {
     public class MultipleObjects
     {
-
         public string href { get; set; }
         public int limit { get; set; }
         public string? next; 

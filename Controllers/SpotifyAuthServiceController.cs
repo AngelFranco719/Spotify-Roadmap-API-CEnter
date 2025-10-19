@@ -23,29 +23,12 @@ namespace SpotifyRequestManagement.Controllers
             return (Ok(new { request_token = token})); 
         }
 
-        // GET api/<SpotifyAuthServiceController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<SpotifyAuthServiceController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<SpotifyAuthServiceController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<SpotifyAuthServiceController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+        [HttpGet("Callback")]
+        public async Task<IActionResult> Callback([FromQuery] string code) {
+            string redirectUri = "http://127.0.0.1:7261/callback";
+            var token = await spotifyAuthService.ExchangeCodeForToken(code, redirectUri);
+            spotifyAuthService.SetOAuthToken(token.access_token); 
+            return Ok(token); 
         }
     }
 }

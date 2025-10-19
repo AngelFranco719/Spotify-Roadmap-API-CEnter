@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using SpotifyRequestManagement.Models;
 using static System.Net.WebRequestMethods;
 
@@ -56,6 +57,30 @@ namespace SpotifyRequestManagement.Services
             string jsonContent = await response.Content.ReadAsStringAsync();
 
             return getDeserializedJson(jsonContent);
+        }
+
+        public async Task<SpotifyTokenResponse> ExchangeCodeForToken(string code, string redirectUri) {
+            var postData = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("grant_type", "authorization_code"),
+                new KeyValuePair<string, string>("code", code),
+                new KeyValuePair<string, string>("redirect_uri", redirectUri),
+                new KeyValuePair<string, string>("client_id", clientID),
+                new KeyValuePair<string, string>("client_secret", clientSecret)
+            });
+
+            var response = await client.PostAsync(URL, postData); 
+            response.EnsureSuccessStatusCode();
+
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<SpotifyTokenResponse>(json); 
+        }
+
+        public void SetOAuthToken(string o_token)
+        {
+            authToken.user_token = o_token;
+            return; 
         }
 
     }

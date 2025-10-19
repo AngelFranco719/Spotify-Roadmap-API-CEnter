@@ -19,7 +19,15 @@ namespace SpotifyRequestManagement.Models.Entities
         public string release_date { get; set; }
         public string release_date_precision { get; set; }
         public Restriction restrictions { get; set; }
-        public SpotifyBaseObject[] artist;
+        public SimplifiedArtist[] artists { get; set;  }
+        public Tracks tracks { get; set; }
+        public int popularity { get; set; }
+        public string label { get; set; }
+
+        public override string ToString()
+        {
+            return $"Nombre: {this.name} \n Artista: {artists[0].name}";
+        }
 
     }
 }

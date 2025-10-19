@@ -2,7 +2,7 @@
 {
     public class Track : SpotifyBaseObject
     {
-        public Album album { get; set; }
+        public Album? album { get; set; }
         public SimplifiedArtist[] artists { get; set; }
         public string[] available_markets { get; set; }
         public int disc_number { get; set; }

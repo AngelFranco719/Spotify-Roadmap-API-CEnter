@@ -11,7 +11,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<SpotifyAuthService>();
 builder.Services.AddSingleton<AuthToken>();
-builder.Services.AddHttpClient<SpotifyApiRequest>(); 
+builder.Services.AddHttpClient<SpotifyApiRequest>();
+builder.Services.AddHttpClient<LastFMApiRequest>();
+builder.Services.AddSingleton<MusicalGenerativeField>();
+builder.Services.AddSingleton<SamplerContextualFilter>();
+builder.Services.AddSingleton<MapSimplifiedTracks>();
+builder.Services.AddSingleton<FilterAlgorithmHub>();
 
 var app = builder.Build();
 
