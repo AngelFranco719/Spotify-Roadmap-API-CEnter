@@ -47,7 +47,7 @@ namespace SpotifyRequestManagement.Controllers
                     return Ok(playlist);
 
                 case "album":
-                    var resultAlbum = await queryResponse.getQueryResponse<SimplifiedAlbum, Albums>();
+                    var resultAlbum = await queryResponse.getQueryResponse<Album, Albums>();
                     var album = resultAlbum.GetResult();
                     return Ok(album);
 

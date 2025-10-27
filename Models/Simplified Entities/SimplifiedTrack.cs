@@ -18,7 +18,7 @@ namespace SpotifyRequestManagement.Models.Simplified_Entities
         public External_IDs external_ids { get; set; }
         public string[] genres { get; set; }
         public string label { get; set; }
-        int popularity { get; set; }
+        public int popularity { get; set; }
 
         public override string ToString()
         {

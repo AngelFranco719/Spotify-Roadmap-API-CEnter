@@ -15,11 +15,13 @@ namespace SpotifyRequestManagement.Services
         string URL = "https://api.spotify.com/v1/";
         private readonly HttpClient httpClient;
         private readonly AuthToken token;
+        private readonly ILogger<SpotifyApiRequest> logger; 
 
-        public SpotifyApiRequest(HttpClient _httpClient, AuthToken token)
+        public SpotifyApiRequest(HttpClient _httpClient, AuthToken token, ILogger<SpotifyApiRequest> logger)
         {
             httpClient = _httpClient;
             this.token = token;
+            this.logger = logger; 
         }
 
         public async Task<Artist> getArtist(string id_token)
@@ -37,8 +39,7 @@ namespace SpotifyRequestManagement.Services
 
         public async Task<Album> getAlbum(string ID)
         {
-            string currentURL = URL + $"albums/{ID}";
-            Console.WriteLine(currentURL);
+            string currentURL = URL + $"albums={ID}";
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, currentURL);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
 
@@ -47,6 +48,23 @@ namespace SpotifyRequestManagement.Services
             string jsonAlbum = await response.Content.ReadAsStringAsync();
             Album album = JsonSerializer.Deserialize<Album>(jsonAlbum);
             return album; 
+        }
+
+        public async Task<Albums> getAlbums(List<string> ids)
+        {
+            string currentURL = URL + $"albums?ids=";
+
+            foreach (string id in ids)
+                currentURL += id == ids[ids.Count - 1]? $"{id}" : $"{id},"; 
+
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, currentURL);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+
+            var response = await httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            string jsonAlbum = await response.Content.ReadAsStringAsync();
+            Albums album = JsonSerializer.Deserialize<Albums>(jsonAlbum);
+            return album;
         }
 
         public async Task<Tracks> getAlbumTracks(string ID) {
@@ -97,7 +115,7 @@ namespace SpotifyRequestManagement.Services
         }
 
         public async Task<AlbumPages> getArtistAlbums(string id_artist) {
-            string currentURL = URL + $"artists/{id_artist}/albums?include_groups=album";
+            string currentURL = URL + $"artists/{id_artist}/albums?include_groups=album,single";
 
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, currentURL);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.token);

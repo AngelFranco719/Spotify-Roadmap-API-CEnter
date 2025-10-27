@@ -1,20 +1,20 @@
-﻿using SpotifyRequestManagement.Models.Queries_Models;
-using SpotifyRequestManagement.Models.Simplified_Entities;
+﻿using SpotifyRequestManagement.Models.Entities;
+using SpotifyRequestManagement.Models.Queries_Models;
 
 namespace SpotifyRequestManagement.Models.Multiple_Entities
 {
-    public class Albums : MultipleObjects, QueryResultInterface<SimplifiedAlbum>
+    public class Albums : MultipleObjects, QueryResultInterface<Album>
     {
-        public SimplifiedAlbum[] items { get; set; }
+        public Album[] albums { get; set; }
 
-        public SimplifiedAlbum[] GetResult()
+        public Album[] GetResult()
         {
-            return items; 
+            return albums; 
         }
 
         public override string ToString()
         {
-            return items[0].name; 
+            return albums[0].name; 
         }
     }
 }

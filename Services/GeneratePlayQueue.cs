@@ -71,55 +71,63 @@ namespace SpotifyRequestManagement.Services
         }
 
         private void setTracksToPlaylist() {
+
+            logger.LogInformation("Las colas tienen: Familiaridad - {f}, Diversidad {d}", familiarArtists.Count, diverseArtists.Count); 
+
             int initialRepresentation = (int)(expected_size * 0.40);
 
             final_playQueue[0] = root;
             filteredTracks[root.artists[0].id].RemoveAt(0); 
 
             while (DiversityIndex.Count != 0) {
-                try {
-                    string currentID = diverseArtists.Dequeue();
-                    int randIndex = random.Next(DiversityIndex.Count);
+             
+                string currentID = diverseArtists.Dequeue();
+                int randIndex = random.Next(DiversityIndex.Count);
+
+                if (filteredTracks[currentID].Count == 0) 
+                    continue;
+
+                try
+                {
                     final_playQueue[DiversityIndex[randIndex]] = filteredTracks[currentID][0];
                     DiversityIndex.RemoveAt(randIndex); 
                     filteredTracks[currentID].RemoveAt(0);
                     diverseArtists.Enqueue(currentID);
-                    logger.LogInformation("Puse el indice {index}", DiversityIndex[randIndex]); 
+               
                 }
                 catch(Exception e)
                 {
                     logger.LogError(e.Message); 
                     logger.LogWarning("No hay artistas en diversidad, el tamaño de la cola es {size}", diverseArtists.Count);
-                    break; 
                 }
                 
             }
 
             string current = familiarArtists.Dequeue();
-            double currentPercentaje = .40;
-            double count = 0; 
-            while (FamiliarIndex.Count != 0 && (count / (double)expected_size) <= currentPercentaje) {
+            double currentPercentaje = .30;
+            int nec = (int) (FamiliarIndex.Count * currentPercentaje);
+            int agregados = 0; 
+            while (FamiliarIndex.Count != 0 && agregados < nec) {
                 try
                 {
                     int randIndex = random.Next(FamiliarIndex.Count);
                     final_playQueue[FamiliarIndex[randIndex]] = filteredTracks[current][0];
-                    logger.LogInformation("Pongo la canción {track} y llevo un indice de {index}", filteredTracks[current][0].name, (count / (double)expected_size)); 
                     FamiliarIndex.RemoveAt(randIndex); 
                     filteredTracks[current].RemoveAt(0);
-                    count++;
-                    logger.LogInformation("Puse el indice {index}", FamiliarIndex[randIndex]);
+                    agregados++; 
 
-                    if (count / (double) expected_size <= currentPercentaje)
+                    if (agregados == nec)
                     {
                         familiarArtists.Enqueue(current); 
                         current = familiarArtists.Dequeue();
-                        currentPercentaje = currentPercentaje * .50 == 0? 1 : currentPercentaje * .50;
+                        nec = Math.Max(1, (int)(FamiliarIndex.Count * currentPercentaje));
+                        agregados = 0; 
                     }
                 }
                 catch(Exception e) {
                     logger.LogError(e.Message); 
-                    logger.LogWarning("No hay artistas en Familiaridad, el tamaño de la cola es {size}", familiarArtists.Count); 
-                    break; 
+                    logger.LogWarning("No hay artistas en Familiaridad, el tamaño de la cola es {size}", familiarArtists.Count);
+                    agregados = nec; 
                 }
              }
                 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using SpotifyRequestManagement.Models;
 using SpotifyRequestManagement.Models.Entities;
+using SpotifyRequestManagement.Models.Multiple_Entities;
 using SpotifyRequestManagement.Models.Pages;
 using SpotifyRequestManagement.Models.Simplified_Entities;
 using System.Collections.Concurrent;
@@ -26,7 +27,7 @@ namespace SpotifyRequestManagement.Services
 
         public async Task<ConcurrentBag<SimplifiedTrack>> getTracks() {
             int maxConcurrentRequest = 2;
-            int delay = 200; 
+            int delay = 1000; 
             SemaphoreSlim semaphore = new SemaphoreSlim(maxConcurrentRequest);
 
             foreach (Artist artist in flattenedGraph) {
@@ -37,9 +38,9 @@ namespace SpotifyRequestManagement.Services
                     {
                         await this.GetSimplifiedAlbumsFromArtist(artist.id);
                     }
-                    catch
+                    catch(Exception e)
                     {
-                        logger.LogWarning("No se pudo obtener tracks del artista {name}", artist.name);
+                        logger.LogWarning(e.Message); 
                     }
                     finally
                     {
@@ -62,12 +63,17 @@ namespace SpotifyRequestManagement.Services
 
         private async Task GetSpecifiedAlbumsFromArtist(AlbumPages albumPages)
         {
-            foreach (SimplifiedAlbum simplifiedAlbum in albumPages.items)
-            {
-                Album current = await spotifyApiRequest.getAlbum(simplifiedAlbum.id);
-                logger.LogInformation("{album}", current.ToString());
-                mapSimplifiedTracksInSample(current);
-            }
+            List<string> grouped_albums = new List<string>();
+            foreach (SimplifiedAlbum simplifiedAlbum in albumPages.items) // <- Agrupo los albums.
+                grouped_albums.Add(simplifiedAlbum.id);
+
+            Albums result = await spotifyApiRequest.getAlbums(grouped_albums);
+
+            List<Album> sorted = result.albums.OrderByDescending(x => x.popularity).ToList();
+
+            for (int i = 0; i < Math.Min(5, sorted.Count); i++) 
+                this.mapSimplifiedTracksInSample(sorted[i]);
+            
         }
 
         private void mapSimplifiedTracksInSample(Album current)
@@ -75,9 +81,7 @@ namespace SpotifyRequestManagement.Services
             Tracks tracksPagination = current.tracks;
             SimplifiedTrack[] simplifiedTracks = tracksPagination.items;
             foreach (SimplifiedTrack track in simplifiedTracks)
-            {
                 sample.Add(track);
-            }
         }
         #endregion
     }

@@ -53,6 +53,7 @@ namespace SpotifyRequestManagement.Services
             // Mapear y preparar información para el filtrado profundo
             mapTracksToDictionary();
             this.tabu.refToArtist = this.refToArtist;
+
             // Filtrado 
             this.deepFilteringSample.root = this.root;
             this.deepFilteringSample.graph = this.graph;
@@ -64,11 +65,11 @@ namespace SpotifyRequestManagement.Services
             }
 
 
-            this.finalQueue = this.generatePlayQueue.generatePlayQueue(root, 30);
+            this.finalQueue = this.generatePlayQueue.generatePlayQueue(root, 60);
 
-            foreach (Track track in finalQueue) {
-                if (track != null)
-                    logger.LogInformation("En lista: {name}", track.name); 
+            for(int i = 0; i < finalQueue.Count; i++)
+            {
+                logger.LogInformation("El índice {index} es la canción {canción}", i, finalQueue[i] != null? finalQueue[i].name : "null"); 
             }
                 
                 

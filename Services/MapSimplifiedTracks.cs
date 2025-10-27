@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using SpotifyRequestManagement.Models.Entities;
 using SpotifyRequestManagement.Models.Multiple_Entities;
 using SpotifyRequestManagement.Models.Simplified_Entities; 
@@ -42,9 +43,31 @@ namespace SpotifyRequestManagement.Services
 
         private async Task getFinalSample() {
             List<Task> concurrence = new List<Task>();
-            foreach (List<string> group in requestGroups)
-                concurrence.Add(requestTracks(group));
-            await Task.WhenAll(concurrence); 
+
+            int maxConcurrentRequest = 2;
+            int delay = 1000;
+            SemaphoreSlim semaphore = new SemaphoreSlim(maxConcurrentRequest);
+
+            foreach (List<string> request in requestGroups) {
+                await semaphore.WaitAsync();
+                concurrence.Add(Task.Run(async () => {
+                    try
+                    {
+                        await requestTracks(request); 
+                    }
+                    catch(Exception e)
+                    {
+                        logger.LogError(e.Message); 
+                    }
+                    finally
+                    {
+                        await Task.Delay(delay);
+                        semaphore.Release(); 
+                    }
+               }));         
+            }
+
+            await Task.WhenAll(concurrence);          
         }
 
         private async Task requestTracks(List<string> group) {

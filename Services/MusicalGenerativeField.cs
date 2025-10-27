@@ -93,7 +93,7 @@ namespace SpotifyRequestManagement.Services
             int priority = 8;
             int randomNumber = 2;
 
-            if (current.artist.Count == 0)
+            if (current.artist == null || current.artist.Count == 0)
                 return new List<FMArtist>(); 
             List<FMArtist> selectedArtists = new List<FMArtist> { current.artist[0] };
             List<FMArtist> remaining = current.artist.Skip(1).Take(priority).ToList();
