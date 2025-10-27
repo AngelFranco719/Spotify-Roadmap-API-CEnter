@@ -4,6 +4,7 @@ using SpotifyRequestManagement.Models;
 using SpotifyRequestManagement.Models.Simplified_Entities;
 using SpotifyRequestManagement.Models.Pages;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace SpotifyRequestManagement.Services
 {
@@ -18,21 +19,29 @@ namespace SpotifyRequestManagement.Services
         private ConcurrentDictionary<string, bool> visitedArtists = new ConcurrentDictionary<string, bool>();
         int deep = 0;
         private static Random random = new Random();
-        private Artist? mainArtist; 
+        private Artist? mainArtist;
+        int artistas = 0;
 
-        SamplerContextualFilter contextualFilter;  
-
+        // Constructor
         public MusicalGenerativeField(LastFMApiRequest _lastFMApi, 
             ILogger<MusicalGenerativeField> _logger, 
             SpotifyApiRequest _spotifyApiRequest, 
-            SamplerContextualFilter contextualFilter
+            TreeFlattener contextualFilter
             ) {
             this.lastFMApi = _lastFMApi;
             this.logger = _logger;
             this.spotifyApiRequest = _spotifyApiRequest;
-            this.contextualFilter = contextualFilter; 
         }
 
+        // Hilo principal
+        public async Task<ConcurrentBag<SimplifiedTrack>> mainThread()
+        {
+            this.queueRequestArtists.Enqueue(await getMainArtist());
+            await GenerativeProcess();
+            return sample;
+        }
+
+        // Obtener al artista correcto 
         public async Task<Artist> getMainArtist() {
             QuerySearch querySearch = new QuerySearch();
             querySearch.type = ["artist"];
@@ -55,55 +64,47 @@ namespace SpotifyRequestManagement.Services
             return correctRoot; 
         }
 
-        public async Task<ConcurrentBag<SimplifiedTrack>> mainThread() {
-            await GenerativeProcess();
-            return sample;
-        }
-
+        // Generador del árbol mediante BFS
         private async Task GenerativeProcess() {
-            if (sample.Count > 500)
-                return; 
-
             ConcurrentQueue<Artist> newLevel = new ConcurrentQueue<Artist>();
-            List<Task> tasks = new List<Task>();
-            while (queueRequestArtists.TryDequeue(out Artist current) && sample.Count <= 500 && deep < 10)
-            {
-                logger.LogInformation("\n\n----------------------------\n Proceso al artista {artist}\n", current.name);
-                logger.LogInformation("\nLlevo {tam} canciones analizadas", sample.Count);
-                tasks.Add(GetSimplifiedAlbumsFromArtist(current.id));
+            List<Task> tasks = new List<Task>(); 
+            while (this.queueRequestArtists.Count != 0 && artistas <= 20) {
+                queueRequestArtists.TryDequeue(out Artist current);
                 tasks.Add(getRelatedArtists(current, newLevel));
+                artistas++; 
             }
-            await Task.WhenAll(tasks); 
-            queueRequestArtists = newLevel;
-            deep++;
-
-            if (sample.Count <= 500)
-                await GenerativeProcess();
+            await Task.WhenAll(tasks);
+            queueRequestArtists = newLevel; 
+            if (artistas <= 20)
+                await GenerativeProcess(); 
         }
 
         #region Obtener los artistas relacionados
         private async Task getRelatedArtists(Artist current_artist, ConcurrentQueue<Artist> newLevel) {
             SimilarArtists similarArtists = await lastFMApi.getSimilarArtists(current_artist.name);
             List<FMArtist> expanded = extractRelevantArtist(similarArtists);
-            await MapFMToSpotify(expanded, newLevel, current_artist); 
+            await MapFMToSpotify(expanded, current_artist, newLevel); 
         }
         #endregion
 
         #region Extraer Artistas Más Relevantes
+
         private List<FMArtist> extractRelevantArtist(SimilarArtists current) {
             int priority = 8;
             int randomNumber = 2;
+
+            if (current.artist.Count == 0)
+                return new List<FMArtist>(); 
             List<FMArtist> selectedArtists = new List<FMArtist> { current.artist[0] };
             List<FMArtist> remaining = current.artist.Skip(1).Take(priority).ToList();
-
             selectedArtists.AddRange(remaining.OrderBy(x => random.Next()).Take(randomNumber));
-
-            return selectedArtists; 
+            return selectedArtists;
         }
+
         #endregion
 
         #region Mapear Datos de LastFM a Spotify
-        private async Task MapFMToSpotify(List<FMArtist> expandedArtists, ConcurrentQueue<Artist> newLevel, Artist current_artist) {
+        private async Task MapFMToSpotify(List<FMArtist> expandedArtists, Artist current_artist, ConcurrentQueue<Artist>newLevel) {
             QuerySearch querySearch = new QuerySearch();
             querySearch.type = ["artist"];
             foreach (FMArtist artist in expandedArtists){
@@ -122,29 +123,6 @@ namespace SpotifyRequestManagement.Services
                     }
                 }
             }            
-        }
-        #endregion
-
-        #region Obtener Albumes de un Artista
-        private async Task GetSimplifiedAlbumsFromArtist(string artistID) {
-            AlbumPages albumPages = await spotifyApiRequest.getArtistAlbums(artistID);
-            await GetSpecifiedAlbumsFromArtist(albumPages); 
-        }
-
-        private async Task GetSpecifiedAlbumsFromArtist(AlbumPages albumPages) {
-            foreach (SimplifiedAlbum simplifiedAlbum in albumPages.items) {
-                Album current = await spotifyApiRequest.getAlbum(simplifiedAlbum.id);
-                logger.LogInformation("{album}", current.ToString());
-                mapSimplifiedTracksInSample(current); 
-            }
-        }
-
-        private void mapSimplifiedTracksInSample(Album current) {
-            Tracks tracksPagination = current.tracks;
-            SimplifiedTrack[] simplifiedTracks = tracksPagination.items;
-            foreach (SimplifiedTrack track in simplifiedTracks) {
-                sample.Add(track);
-            }
         }
         #endregion
     }

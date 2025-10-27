@@ -21,7 +21,13 @@ namespace SpotifyRequestManagement.Services
         public async Task<ConcurrentBag<Track>> setGroups() {
             List<string> newGroup = new List<string>();
 
+            HashSet<string> searched = new HashSet<string>();
+
             foreach (SimplifiedTrack simplifiedTrack in initialSample) {
+
+                if (!searched.Add(simplifiedTrack.name))
+                    continue; 
+
                 if (newGroup.Count < 50)
                     newGroup.Add(simplifiedTrack.id);
                 else {

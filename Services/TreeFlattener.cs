@@ -4,16 +4,16 @@ using System.Collections.Concurrent;
 
 namespace SpotifyRequestManagement.Services
 {
-    public class SamplerContextualFilter
+    public class TreeFlattener
     {
         Artist? root;
         Queue<Artist> bfs = new Queue<Artist>();
-        private readonly ILogger<SamplerContextualFilter> logger;
+        private readonly ILogger<TreeFlattener> logger;
         List<Artist> graph = new List<Artist>();
         MapSimplifiedTracks mapSimplifiedTracks; 
         public ConcurrentBag<SimplifiedTrack>? currentSample { get; set; }
 
-        public SamplerContextualFilter(ILogger<SamplerContextualFilter> _logger, MapSimplifiedTracks mapSimplifiedTracks) {
+        public TreeFlattener(ILogger<TreeFlattener> _logger, MapSimplifiedTracks mapSimplifiedTracks) {
             logger = _logger;
             this.mapSimplifiedTracks = mapSimplifiedTracks; 
         }
@@ -33,15 +33,12 @@ namespace SpotifyRequestManagement.Services
                 graph.Add(current); 
             }
 
-            foreach (Artist node in graph)
-                logger.LogInformation("{name}\n", node.name);
-
             return this.graph; 
         }
 
         private void addRelatedArtists(Artist current) {
-            foreach (Artist related in current.relatedArtist)
-                bfs.Enqueue(related); 
+            foreach (Artist related in current.relatedArtist) 
+                bfs.Enqueue(related);                
         }
 
     }

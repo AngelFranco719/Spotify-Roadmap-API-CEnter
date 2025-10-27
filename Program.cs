@@ -14,9 +14,14 @@ builder.Services.AddSingleton<AuthToken>();
 builder.Services.AddHttpClient<SpotifyApiRequest>();
 builder.Services.AddHttpClient<LastFMApiRequest>();
 builder.Services.AddSingleton<MusicalGenerativeField>();
-builder.Services.AddSingleton<SamplerContextualFilter>();
+builder.Services.AddSingleton<TreeFlattener>();
 builder.Services.AddSingleton<MapSimplifiedTracks>();
 builder.Services.AddSingleton<FilterAlgorithmHub>();
+builder.Services.AddSingleton<TabuSearch>();
+builder.Services.AddSingleton<DeepFilteringSample>();
+builder.Services.AddSingleton<GetTracksFromArtists>();
+builder.Services.AddSingleton<GeneratePlayQueue>();
+
 
 var app = builder.Build();
 
