@@ -2,78 +2,88 @@
 using System.Collections.Concurrent;
 using SpotifyRequestManagement.Models.Simplified_Entities;
 using SpotifyRequestManagement.Models;
+using Microsoft.AspNetCore.SignalR;
 
 namespace SpotifyRequestManagement.Services
 {
     public class FilterAlgorithmHub
     {
-        public Track? root { get; set; }
+        public Track? root; 
         public Artist? mainArtist { get; set; }
-        public MusicalGenerativeField generativeField;
-        public MapSimplifiedTracks mapSimplifiedTracks;
-        public TreeFlattener samplerContextualFilter;
         public ConcurrentBag<SimplifiedTrack>? caothicSample;
         public List<Artist> graph = new List<Artist>();
         public Dictionary<string, Artist> refToArtist = new Dictionary<string, Artist>(); 
-        public ConcurrentBag<Track> finalCaothicSample;
-        public TabuSearch tabu; 
-        public DeepFilteringSample deepFilteringSample;
-        public ILogger<FilterAlgorithmHub> logger;
-        public GetTracksFromArtists getTracksFromArtists;
+        public ConcurrentBag<Track> finalCaothicSample;      
+        public List<Track> finalQueue;
+        private readonly SpotifyApiRequest requestController;
+        private readonly ILogger logger;
+        private readonly LastFMApiRequest lastFMApiRequest;
+        public MusicalGenerativeField generativeField;
+        public MapSimplifiedTracks mapSimplifiedTracks;
+        public TreeFlattener samplerContextualFilter;
+        public TabuSearch tabu;
         public GeneratePlayQueue generatePlayQueue;
-        public List<Track> finalQueue; 
+        public DeepFilteringSample deepFilteringSample;
+        public GetTracksFromArtists getTracksFromArtists;
+        public int duration { get; set; }
+        private readonly IHubContext<ProgressHub> _hubContext;
+        private readonly string connectionId;
 
-        public FilterAlgorithmHub(MusicalGenerativeField generativeField, MapSimplifiedTracks mapSimplifiedTracks,
-                                  TreeFlattener samplerContextualFilter, ILogger<FilterAlgorithmHub> logger, 
-                                  DeepFilteringSample deepFilteringSample, TabuSearch tabu, 
-                                  GetTracksFromArtists getTracksFromArtists, GeneratePlayQueue generatePlayQueue)
-        {
-            this.generativeField = generativeField;
-            this.mapSimplifiedTracks = mapSimplifiedTracks;
-            this.samplerContextualFilter = samplerContextualFilter;
-            this.logger = logger;
-            this.deepFilteringSample = deepFilteringSample;
-            this.tabu = tabu;
-            this.getTracksFromArtists = getTracksFromArtists;
-            this.generatePlayQueue = generatePlayQueue; 
+        public FilterAlgorithmHub(SpotifyApiRequest requestController, ILoggerFactory loggerFactory, 
+            LastFMApiRequest lastFMApiRequest, IHubContext<ProgressHub> _hubContext, string connectionID)
+        { 
+            logger = loggerFactory.CreateLogger<FilterAlgorithmHub>();
+            this.requestController = requestController;
+            this.lastFMApiRequest = lastFMApiRequest;
+            this.mapSimplifiedTracks = new MapSimplifiedTracks(requestController, loggerFactory); 
+            this.samplerContextualFilter = new TreeFlattener(loggerFactory, mapSimplifiedTracks);
+            this.generatePlayQueue = new GeneratePlayQueue(loggerFactory);
+            this.tabu = new TabuSearch(loggerFactory, generatePlayQueue); 
+            this.deepFilteringSample = new DeepFilteringSample(tabu, loggerFactory);
+            this._hubContext = _hubContext;
+            this.generativeField = new MusicalGenerativeField(lastFMApiRequest, requestController, loggerFactory, _hubContext);
+            this.connectionId = connectionID;
+            this.getTracksFromArtists = new GetTracksFromArtists(requestController, loggerFactory, _hubContext, connectionID);
         }
 
-        public async Task MainThread()
+        public async Task<List<Track>> MainThread(string ID_Root)
         {
-            // Obtener el grafo de artistas
+            root = await requestController.getTrack(ID_Root);
+
+            logger.LogInformation("Inicio el proceso"); 
             await this.getGenerativeField();
-            // Aplanar el grafo 
-            await this.setContextualFilter();
-            // Obtener información general
+
+            logger.LogInformation("Busco canciones");
+
+            await this.setContextualFilter(); 
+
             this.getTracksFromArtists.flattenedGraph = this.graph;
             caothicSample = await this.getTracksFromArtists.getTracks();
-
-            // Obtener el campo caótico con información detallada
             await this.setMapSimplifiedTracks();
-            // Mapear y preparar información para el filtrado profundo
             mapTracksToDictionary();
-            this.tabu.refToArtist = this.refToArtist;
-
-            // Filtrado 
+            logger.LogInformation("Busco con tabu"); 
+            this.tabu.refToArtist = this.refToArtist; 
             this.deepFilteringSample.root = this.root;
             this.deepFilteringSample.graph = this.graph;
             this.deepFilteringSample.tabuSearch = this.tabu;
             this.deepFilteringSample.mainThread();
-            //Generar la lista de reproducción
-            foreach(string key in  this.generatePlayQueue.filteredTracks.Keys) {
+
+            this.generatePlayQueue.filteredTracks = this.tabu.artistsTracks;
+
+            string rootArtistId = root.artists[0].id;
+            if (!this.generatePlayQueue.filteredTracks.ContainsKey(rootArtistId))
+            {
+                logger.LogWarning("El artista raíz ({id}) no está en filteredTracks. Se añadirá manualmente.", rootArtistId);
+                this.generatePlayQueue.filteredTracks[rootArtistId] = new List<Track> { root };
+            }
+
+            foreach (string key in  this.generatePlayQueue.filteredTracks.Keys) {
                 List<Track> current = this.generatePlayQueue.filteredTracks[key];
             }
 
-
-            this.finalQueue = this.generatePlayQueue.generatePlayQueue(root, 60);
-
-            for(int i = 0; i < finalQueue.Count; i++)
-            {
-                logger.LogInformation("El índice {index} es la canción {canción}", i, finalQueue[i] != null? finalQueue[i].name : "null"); 
-            }
-                
-                
-
+            logger.LogInformation("Genero la Playlist final");
+            this.finalQueue = this.generatePlayQueue.generatePlayQueue(root, duration);
+            return finalQueue; 
         }
 
         public async Task getGenerativeField() {
@@ -85,6 +95,7 @@ namespace SpotifyRequestManagement.Services
         public async Task setContextualFilter() {
             await samplerContextualFilter.setRoot(mainArtist);
             this.graph = this.samplerContextualFilter.getBFS();
+            await this._hubContext.Clients.Client(connectionId).SendAsync("getFeedback", graph); 
             graph.ForEach(x => refToArtist[x.id] = x); 
         }
 

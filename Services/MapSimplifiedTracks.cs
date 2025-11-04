@@ -14,9 +14,9 @@ namespace SpotifyRequestManagement.Services
         SpotifyApiRequest apiRequest;
         ILogger<MapSimplifiedTracks> logger; 
 
-        public MapSimplifiedTracks(SpotifyApiRequest _apiRequest, ILogger<MapSimplifiedTracks> logger) {
+        public MapSimplifiedTracks(SpotifyApiRequest _apiRequest, ILoggerFactory loggerFactory) {
             this.apiRequest = _apiRequest;
-            this.logger = logger; 
+            this.logger = loggerFactory.CreateLogger<MapSimplifiedTracks>();
         }
 
         public async Task<ConcurrentBag<Track>> setGroups() {

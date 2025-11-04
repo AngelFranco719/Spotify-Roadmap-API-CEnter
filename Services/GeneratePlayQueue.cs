@@ -21,8 +21,8 @@ namespace SpotifyRequestManagement.Services
         ILogger<GeneratePlayQueue> logger;
 
 
-        public GeneratePlayQueue(ILogger<GeneratePlayQueue> logger) {
-            this.logger = logger; 
+        public GeneratePlayQueue(ILoggerFactory factory) {
+            this.logger = factory.CreateLogger<GeneratePlayQueue>();    
         }
         
 
@@ -52,7 +52,8 @@ namespace SpotifyRequestManagement.Services
         public void initReferences() {
 
             logger.LogInformation("La queue de familiaridad tiene {num} artistas", familiarArtists.Count);
-            logger.LogInformation("La queue de diversidad tiene {num} artistas", diverseArtists.Count); 
+            logger.LogInformation("La queue de diversidad tiene {num} artistas", diverseArtists.Count);
+         
 
             for (int i = 1; i < expected_size; i++) {
                 double random_number = random.NextDouble();
@@ -67,7 +68,9 @@ namespace SpotifyRequestManagement.Services
                     listReferences[i] = 'D';
                     logger.LogInformation("El indice {ind} esta en diversidad", i);
                 }
-            }   
+            }
+            logger.LogInformation("final_playQueue tiene {count} elementos", final_playQueue.Count);
+            logger.LogInformation("FamiliarIndex máximo: {max}", FamiliarIndex.Max());
         }
 
         private void setTracksToPlaylist() {
@@ -80,7 +83,8 @@ namespace SpotifyRequestManagement.Services
             filteredTracks[root.artists[0].id].RemoveAt(0); 
 
             while (DiversityIndex.Count != 0) {
-             
+
+                logger.LogInformation("Estoy trabajando"); 
                 string currentID = diverseArtists.Dequeue();
                 int randIndex = random.Next(DiversityIndex.Count);
 
@@ -108,9 +112,11 @@ namespace SpotifyRequestManagement.Services
             int nec = (int) (FamiliarIndex.Count * currentPercentaje);
             int agregados = 0; 
             while (FamiliarIndex.Count != 0 && agregados < nec) {
+                logger.LogInformation("Estoy trabajando");
                 try
                 {
                     int randIndex = random.Next(FamiliarIndex.Count);
+                    logger.LogInformation("Indice: {index}", randIndex); 
                     final_playQueue[FamiliarIndex[randIndex]] = filteredTracks[current][0];
                     FamiliarIndex.RemoveAt(randIndex); 
                     filteredTracks[current].RemoveAt(0);

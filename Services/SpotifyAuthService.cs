@@ -1,5 +1,8 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Web;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json.Linq;
 using SpotifyRequestManagement.Models;
 using static System.Net.WebRequestMethods;
 
@@ -10,6 +13,10 @@ namespace SpotifyRequestManagement.Services
         private const string clientID = "84a658a2fd724fd9b69f8b8e8f9874ba";
         private const string clientSecret = "beafe247116747c6a55ac767e0d52d4e";
         private const string URL = "https://accounts.spotify.com/api/token";
+        private const string redirectUri = "http://127.0.0.1:7261/callback";
+        private const string scope = "playlist-modify-private playlist-modify-public";
+
+        public string userToken { get; set; }
 
         static FormUrlEncodedContent content = new FormUrlEncodedContent(new[] {
             new KeyValuePair<string, string>("grant_type", "client_credentials"),
@@ -82,6 +89,5 @@ namespace SpotifyRequestManagement.Services
             authToken.user_token = o_token;
             return; 
         }
-
     }
 }

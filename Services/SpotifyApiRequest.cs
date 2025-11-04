@@ -1,7 +1,9 @@
-﻿using System.Net.Http.Headers;
+﻿using System;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Xml.Linq;
 using SpotifyRequestManagement.Models;
 using SpotifyRequestManagement.Models.Entities;
 using SpotifyRequestManagement.Models.Multiple_Entities;
@@ -143,6 +145,76 @@ namespace SpotifyRequestManagement.Services
             SeveralTracksResponse severalTracksResponse = JsonSerializer.Deserialize<SeveralTracksResponse>(json); 
 
             return severalTracksResponse; 
+        }
+
+        public async Task<string> GetCurrentUserIdAsync(string token)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://api.spotify.com/v1/me");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var data = JsonDocument.Parse(json);
+            string userId = data.RootElement.GetProperty("id").GetString();
+
+            return userId;
+        }
+
+
+        public async Task<string> createPlaylist(List<string> tracks, string token) {
+
+            string userId = await this.GetCurrentUserIdAsync(token);
+
+            logger.LogInformation("UserID: {userId}", userId); 
+
+            string currentURL = URL + $"users/{userId}/playlists";
+            var request = new HttpRequestMessage(HttpMethod.Post, currentURL); 
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var body = new
+            {
+                name = "Sesión Musical 🚀",
+                description = "Lista de Reproducción espacial creada automáticamente 👽",
+                @public = true
+            };
+            string json = JsonSerializer.Serialize(body);
+            request.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var response = await httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResult = await response.Content.ReadAsStringAsync();
+            var playlist = JsonSerializer.Deserialize<JsonElement>(jsonResult);
+
+            string playlistUrl = playlist
+                .GetProperty("external_urls")
+                .GetProperty("spotify")
+                .GetString();
+
+            string playlistId = playlist.GetProperty("id").GetString();
+
+            await setTracksToPlaylist(token, playlistId, tracks); 
+
+            return playlistUrl; 
+        }
+
+        public async Task setTracksToPlaylist(string token, string playlistId, List<string>tracks) {
+            string userId = await this.GetCurrentUserIdAsync(token);
+            string url = URL + $"playlists/{playlistId}/tracks";
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var body = new
+            {
+                uris = tracks
+            };
+
+            string json = JsonSerializer.Serialize(body);
+            request.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
         }
 
     }

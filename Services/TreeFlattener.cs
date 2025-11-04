@@ -13,8 +13,8 @@ namespace SpotifyRequestManagement.Services
         MapSimplifiedTracks mapSimplifiedTracks; 
         public ConcurrentBag<SimplifiedTrack>? currentSample { get; set; }
 
-        public TreeFlattener(ILogger<TreeFlattener> _logger, MapSimplifiedTracks mapSimplifiedTracks) {
-            logger = _logger;
+        public TreeFlattener(ILoggerFactory _logger, MapSimplifiedTracks mapSimplifiedTracks) {
+            logger = _logger.CreateLogger<TreeFlattener>();
             this.mapSimplifiedTracks = mapSimplifiedTracks; 
         }
 

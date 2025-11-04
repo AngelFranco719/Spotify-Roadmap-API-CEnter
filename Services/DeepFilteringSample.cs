@@ -13,10 +13,10 @@ namespace SpotifyRequestManagement.Services
         int iteration = 0;
         ILogger<DeepFilteringSample> logger; 
 
-        public DeepFilteringSample(TabuSearch tabuSearch, ILogger<DeepFilteringSample> logger)
+        public DeepFilteringSample(TabuSearch tabuSearch, ILoggerFactory factory)
         {
             this.tabuSearch = tabuSearch;
-            this.logger = logger;
+            this.logger = factory.CreateLogger<DeepFilteringSample>();
         }
 
         string setPriority() {
@@ -37,6 +37,8 @@ namespace SpotifyRequestManagement.Services
 
             while (filteredSample.Count <= 100) {
 
+                logger.LogInformation("Estoy trabajando en tabu");
+
                 string priority = setPriority();
                 int ini = priority == "familiarity" ? 0 : (graph.Count / 2) + 1;
                 int fin = graph.Count; 
@@ -54,9 +56,11 @@ namespace SpotifyRequestManagement.Services
                     else
                         this.tabuSearch.tabuList[graph[i].id] = 0;
 
-                    Track? track = this.tabuSearch.addTrack(graph[i].id, iteration, i, graph.Count); 
-                    if(track != null) this.filteredSample.Add(track);
-                    break; 
+                    Track? track = this.tabuSearch.addTrack(graph[i].id, iteration, i, graph.Count);
+                    if (track != null) {
+                        this.filteredSample.Add(track);
+                        break;
+                    }
                 }
                 iteration++; 
             }

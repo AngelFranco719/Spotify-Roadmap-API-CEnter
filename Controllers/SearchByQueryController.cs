@@ -7,9 +7,7 @@ using SpotifyRequestManagement.Services;
 
 namespace SpotifyRequestManagement.Controllers
 {
-    [Route("api/Search/[controller]")]
-    [ApiController]
-    public class SearchByQueryController : Controller
+    public class SearchByQueryController
     {
         private readonly SpotifyAuthService spotifyAuthService;
         private readonly SpotifyApiRequest spotifyApiRequest;
@@ -20,42 +18,12 @@ namespace SpotifyRequestManagement.Controllers
             this.spotifyApiRequest = spotifyApiRequest;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetQuery([FromQuery] QuerySearch query) {
+        public async Task<SimplifiedTrack[]> getTracksByQuery(QuerySearch query) {
             QueryResponse queryResponse = new QueryResponse(query, spotifyApiRequest);
+            var resultTrack = await queryResponse.getQueryResponse<SimplifiedTrack, Tracks>();
+            var tracks = resultTrack.GetResult();
+            return tracks;
 
-            string type = query.type[0];
-            query.type = []; 
-
-            Console.WriteLine(queryResponse.encodedQuery); 
-
-            switch (type) {
-
-                case "track":
-                    var resultTrack = await queryResponse.getQueryResponse<SimplifiedTrack,Tracks>();
-                    var tracks = resultTrack.GetResult();
-                    return Ok(tracks);
-
-                case "artist":
-                    var resultArtist = await queryResponse.getQueryResponse<Artist, Artists>(); 
-                    var artists = resultArtist.GetResult();
-                    return Ok(artists);
-
-                case "playlist":
-                    var resultPlaylist = await queryResponse.getQueryResponse<SimplifiedPlaylists, Playlists>(); 
-                    var playlist = resultPlaylist.GetResult();
-                    return Ok(playlist);
-
-                case "album":
-                    var resultAlbum = await queryResponse.getQueryResponse<Album, Albums>();
-                    var album = resultAlbum.GetResult();
-                    return Ok(album);
-
-                default:
-                    return BadRequest("Tipo No Soportado"); 
-
-            
-            }
         }
     }
 }

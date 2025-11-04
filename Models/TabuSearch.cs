@@ -20,10 +20,12 @@ namespace SpotifyRequestManagement.Models
         private static Random random = new Random();
         public Queue<Track> historial = new Queue<Track>();
         public GeneratePlayQueue generatePlayQueue; 
-        public TabuSearch(ILogger<TabuSearch> logger, GeneratePlayQueue generatePlayQueue) {
-            this.logger = logger; 
+
+        public TabuSearch(ILoggerFactory loggerFactory, GeneratePlayQueue generatePlayQueue) {
+            this.logger = loggerFactory.CreateLogger<TabuSearch>(); 
             this.generatePlayQueue = generatePlayQueue; 
         }
+
         Dictionary<string, int> getTemp(){
             Queue<Track> aux = new Queue<Track>(historial);
             Dictionary<string, int> temp = new Dictionary<string, int>(); 
@@ -79,7 +81,13 @@ namespace SpotifyRequestManagement.Models
                     this.tabuList[id_artist] = current_iteration + 30;
             try
             {
-                int maxRan = total_graph / 2 >= index_graph ? 10 : 30; 
+                int maxRan = total_graph / 2 >= index_graph ? 10 : 30;
+                if (!this.artistsTracks.ContainsKey(id_artist) || this.artistsTracks[id_artist].Count == 0)
+                {
+                    logger.LogWarning("Artista {id} no tiene canciones registradas en artistsTracks", id_artist);
+                    this.tabuList[id_artist] = current_iteration + 10000;
+                    return null;
+                }
                 var ran = this.artistsTracks[id_artist].Take(maxRan).ToList();
                 Track song = ran[random.Next(ran.Count)];
                 this.artistsTracks[id_artist].Remove(song); 

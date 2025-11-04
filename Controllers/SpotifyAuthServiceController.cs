@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SpotifyRequestManagement.Models;
 using SpotifyRequestManagement.Services;
 
 namespace SpotifyRequestManagement.Controllers
@@ -9,10 +10,16 @@ namespace SpotifyRequestManagement.Controllers
     {
 
         private readonly SpotifyAuthService spotifyAuthService; 
+        private readonly ILogger<SpotifyAuthServiceController> logger;
+        private readonly AuthToken auth; 
 
-        public SpotifyAuthServiceController(SpotifyAuthService _spotifyAuthService) { 
+        public SpotifyAuthServiceController(SpotifyAuthService _spotifyAuthService, 
+            ILogger<SpotifyAuthServiceController> logger, AuthToken auth)
+        {
             spotifyAuthService = _spotifyAuthService;
-        } 
+            this.logger = logger;
+            this.auth = auth; 
+        }
 
         // GET: api/<SpotifyAuthServiceController>
         [HttpGet]
@@ -24,11 +31,25 @@ namespace SpotifyRequestManagement.Controllers
         }
 
         [HttpGet("Callback")]
-        public async Task<IActionResult> Callback([FromQuery] string code) {
+        public async Task<IActionResult> Callback([FromQuery] string code)
+        {
+            if (string.IsNullOrEmpty(code))
+                return BadRequest("Missing code.");
+
             string redirectUri = "http://127.0.0.1:7261/callback";
+
             var token = await spotifyAuthService.ExchangeCodeForToken(code, redirectUri);
-            spotifyAuthService.SetOAuthToken(token.access_token); 
-            return Ok(token); 
+
+            spotifyAuthService.SetOAuthToken(token.access_token);
+
+            auth.user_token = token.access_token; 
+
+            logger.LogInformation("Obtuve el token {token}", spotifyAuthService.userToken); 
+
+            System.IO.File.WriteAllText("spotify_refresh_token.txt", token.refresh_token ?? "");
+
+            return Ok(token);
         }
+
     }
 }
