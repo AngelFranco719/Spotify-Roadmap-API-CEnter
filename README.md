@@ -1,3 +1,14 @@
+**La página actualmente sólo tiene versión móvil**
+
+<p align="center">
+  <a href="https://github.com/AngelFranco719/Musical-Recommender-Frontend">
+    <img src="https://img.shields.io/badge/Ver%20Repositorio%20FrontEnd-181717?style=for-the-badge&logo=github&logoColor=white" alt="Ver Repositorio FrontEnd">
+  </a>
+  <a href="https://musical-recommender-frontend.vercel.app/">
+    <img src="https://img.shields.io/badge/Ver%20Página-1DB954?style=for-the-badge&logo=spotify&logoColor=white" alt="Ver Página">
+  </a>
+</p>
+
 
 # 🎵 Musical Recommender System
 
